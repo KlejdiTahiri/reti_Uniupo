@@ -13,6 +13,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#define NAK "NAK"
+#define ACK "ACK"
 
 int main(int argc, char *argv[]) {
     int simpleSocket = 0;
@@ -59,12 +61,20 @@ int main(int argc, char *argv[]) {
         }
         sendto(simpleSocket, &sockfd, sizeof (sockfd), 0, (struct sockaddr *) &destAddr, destSize);
 
-        int status = recvfrom(simpleSocket, &sockfd, sizeof(sockfd), 0, (struct sockaddr *) &destAddr, &destSize);
-        printf("numero max mandato dal server: %d\n", sockfd);
+        int status = recvfrom(simpleSocket, buffer, sizeof(buffer), 0, (struct sockaddr *) &destAddr, &destSize);
+        buffer[status] = '\0';
+        if (strcmp(buffer, ACK) == 0) {
+            printf("ACK received from server.\n");
+            status = recvfrom(simpleSocket, &sockfd, sizeof(sockfd), 0, (struct sockaddr *)&destAddr, &destSize);
+            if (status < 0) {
+                perror("recvfrom failed");
+                break;
+            }
 
-        if (status < 0){
-            perror("recvfrom fallita");
-            break;
+            printf("numero max mandato dal server: %d\n", sockfd);
+        } else if (strcmp(buffer, NAK) == 0) {
+            printf("NAK received from server. Resending...\n");
+            sendto(simpleSocket, &sockfd, sizeof(sockfd), 0, (struct sockaddr *)&destAddr, destSize);
         }
 
     }
