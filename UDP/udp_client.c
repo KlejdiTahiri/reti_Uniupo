@@ -10,6 +10,8 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#define NAK "NAK"
+#define ACK "ACK"
 
 int main(int argc, char *argv[]) {
     int simpleSocket = 0;
@@ -47,20 +49,30 @@ int main(int argc, char *argv[]) {
 
     destSize = sizeof(destAddr);
     while (1) {
-        int sockfd;
+        int sockfd = 1;
         printf("Inserisci num (-1 per uscire): ");
         scanf("%d", &sockfd);
         if (sockfd == -1) {
+            printf("chiusura sistema\n");
             break;
         }
         sendto(simpleSocket, &sockfd, sizeof (sockfd), 0, (struct sockaddr *) &destAddr, destSize);
-
-        int status = recvfrom(simpleSocket, &sockfd, sizeof(sockfd), 0, (struct sockaddr *) &destAddr, &destSize);
-        printf("numero mandato dal server: %d\n", sockfd);
-        if (status < 0){
-            perror("recvfrom fallita");
-            break;
+        int status1 = recvfrom(simpleSocket, buffer, sizeof(buffer), 0, (struct sockaddr *) &destAddr, &destSize);
+        buffer[status1] = '\0';
+        if (strcmp(buffer, ACK) == 0){
+            printf("ACK ricevuto dal server\n");
+            int status = recvfrom(simpleSocket, &sockfd, sizeof(sockfd), 0, (struct sockaddr *) &destAddr, &destSize);
+            if (status < 0){
+                perror("errore nel ricevere il numero\n");
+                break;
+            }
+        } else if (strcmp(buffer, NAK) == 0){
+            printf("NAK ricevuto dal server fare una ritrasmissione\n");
+            sendto(simpleSocket, &sockfd, sizeof (sockfd), 0, (struct sockaddr *) &destAddr, destSize);
         }
+
+
+       printf("numero mandato dal server: %d\n", sockfd);
 
     }
     close(simpleSocket);
