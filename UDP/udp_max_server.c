@@ -13,6 +13,8 @@
 #include <unistd.h>
 #include "time.h"
 #include <arpa/inet.h>
+#define ACK "ACK"
+#define NAK "NAK"
 
 const char MESSAGE[] = "Siete nella dimora di kle\n";
 
@@ -68,7 +70,10 @@ int main(int argc, char *argv[]) {
         int status = recvfrom(simpleSocket, &num, sizeof(num), 0, (struct sockaddr *) &clientName, &clientNameLength);
         if (status < 0){
             perror("recvfrom fallita");
+            sendto(simpleSocket, NAK, sizeof(NAK), 0, (struct sockaddr *)&clientName, clientNameLength);
             continue;
+        }else{
+            sendto(simpleSocket, ACK, sizeof(ACK), 0, (struct sockaddr *)&clientName, clientNameLength);
         }
 
         if (num > maxNum){
